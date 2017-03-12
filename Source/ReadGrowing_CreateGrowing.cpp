@@ -7,6 +7,7 @@
 //---------------------------------------------------------------------------
 // std includes
 #include <iostream>
+#include <sstream>
 #include <iomanip>
 #include <fstream>
 #include <cstring>
@@ -26,13 +27,16 @@ void OutputPrefix(ostream &Out)
 
 //---------------------------------------------------------------------------
 // Long output
-void LongOutput(ostream &Out, LARGE_INTEGER &Offset)
+void LongOutput(ostream &Out, LARGE_INTEGER &Offset, int Pos, int Count)
 {
     SYSTEMTIME Time;
     GetLocalTime(&Time);
 
     OutputPrefix(Out);
-    Out << "Offset=" << setfill('0') << setw(10) << hex << Offset.QuadPart << endl;
+    Out << "Offset=" << setfill('0') << setw(10) << hex << Offset.QuadPart;
+    if (Count>1 && Offset.QuadPart)
+        Out << dec << " (File " << Pos + 1 << "/" << Count << ")";
+    Out << endl;
 }
 
 //---------------------------------------------------------------------------
@@ -46,6 +50,7 @@ int main(int argc, char* argv[])
     bool Short = false;
     DWORD Delay_Value = 1000; // 1000 ms
     char* LogFile = NULL;
+    int Count = 1;
     LARGE_INTEGER Offset_IgnoreSleep = { 0 };
 
     // Checking command line parameters
@@ -60,6 +65,11 @@ int main(int argc, char* argv[])
         {
             i++;
             Offset_IgnoreSleep.LowPart = atoi(argv[i]);
+        }
+        else if (!strcmp(argv[i], "-c") && i + 1 < argc)
+        {
+            i++;
+            Count = atoi(argv[i]);
         }
         else if (!strcmp(argv[i], "-h"))
         {
@@ -97,6 +107,7 @@ int main(int argc, char* argv[])
             "-b count of bytes to read at each iteration\n"
             "-t count of seconds to wait between each iteration\n"
             "-i count of bytes ignoring -t value (\"burst\")\n"
+            "-c count of repetitions of InputFileName\n"
             "-s short form of log (only a period)"
             "-l log file instead of standard output" << endl;
         return 1;
@@ -151,23 +162,38 @@ int main(int argc, char* argv[])
     DWORD Buffer_Size;
     LPVOID Buffer = new unsigned char[Buffer_Size_Max];
     if (!Short)
-        LongOutput(Out, Offset);
+        LongOutput(Out, Offset, 0, Count);
+    int Pos = 0;
 
     // Reading then writing then small pause
-    while (ReadFile(Input, Buffer, Buffer_Size_Max, &Buffer_Size, NULL) && Buffer_Size)
+    for (;;)
     {
-        DWORD Buffer_Size_Written;
-        if (!WriteFile(Output, Buffer, Buffer_Size, &Buffer_Size_Written, NULL))
-            return 1;
-        Offset.QuadPart += Buffer_Size_Written;
 
-        if (Short)
-            Out << '.';
-        else
-            LongOutput(Out, Offset);
+        while (ReadFile(Input, Buffer, Buffer_Size_Max, &Buffer_Size, NULL) && Buffer_Size)
+        {
+            DWORD Buffer_Size_Written;
+            if (!WriteFile(Output, Buffer, Buffer_Size, &Buffer_Size_Written, NULL))
+                return 1;
+            Offset.QuadPart += Buffer_Size_Written;
 
-        if (Offset.QuadPart>Offset_IgnoreSleep.QuadPart)
-            Sleep(Delay_Value); //Wait
+            if (Short)
+                Out << '.';
+            else
+                LongOutput(Out, Offset, Pos, Count);
+
+            if (Offset.QuadPart>Offset_IgnoreSleep.QuadPart)
+                Sleep(Delay_Value); //Wait
+        }
+
+        // Check the count of loops
+        Pos++;
+        if (Pos>=Count)
+            break;
+
+        // Seek to 0
+        LARGE_INTEGER GoTo;
+        GoTo.QuadPart=0;
+        BOOL i = SetFilePointerEx(Input, GoTo, NULL, SEEK_SET);
     }
 
     CloseHandle(Output);

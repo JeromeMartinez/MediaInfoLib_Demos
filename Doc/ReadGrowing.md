@@ -57,5 +57,6 @@ Options:
 - `-b`: count of bytes to read at each iteration 
 - `-t`: count of seconds to wait between each iteration 
 - `-i`: count of bytes ignoring -t value ("burst") 
+- `-c`: count of repetitions of InputFileName 
 - `-s`: short form of log (only a period) 
 - `-l`: file instead of standard output 
