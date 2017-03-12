@@ -162,6 +162,8 @@ int main(int argc, char* argv[])
         Sleep(Delay_Value); //Wait
     }
 
+    CloseHandle(Output);
+
     // Ending
     delete[] Buffer;
 
