@@ -46,6 +46,7 @@ int main(int argc, char* argv[])
     bool Short = false;
     DWORD Delay_Value = 1000; // 1000 ms
     char* LogFile = NULL;
+    LARGE_INTEGER Offset_IgnoreSleep = { 0 };
 
     // Checking command line parameters
     for (int i = 1; i < argc; i++)
@@ -54,6 +55,11 @@ int main(int argc, char* argv[])
         {
             i++;
             Buffer_Size_Max = atoi(argv[i]);
+        }
+        else if (!strcmp(argv[i], "-i") && i + 1 < argc)
+        {
+            i++;
+            Offset_IgnoreSleep.LowPart = atoi(argv[i]);
         }
         else if (!strcmp(argv[i], "-h"))
         {
@@ -90,6 +96,7 @@ int main(int argc, char* argv[])
             "Usage: " << argv[0] << " [-b Bytes] [-t Seconds] [-s] [-l LogFile] InputFileName OutputFileName\n"
             "-b count of bytes to read at each iteration\n"
             "-t count of seconds to wait between each iteration\n"
+            "-i count of bytes ignoring -t value (\"burst\")\n"
             "-s short form of log (only a period)"
             "-l log file instead of standard output" << endl;
         return 1;
@@ -159,7 +166,8 @@ int main(int argc, char* argv[])
         else
             LongOutput(Out, Offset);
 
-        Sleep(Delay_Value); //Wait
+        if (Offset.QuadPart>Offset_IgnoreSleep.QuadPart)
+            Sleep(Delay_Value); //Wait
     }
 
     CloseHandle(Output);
