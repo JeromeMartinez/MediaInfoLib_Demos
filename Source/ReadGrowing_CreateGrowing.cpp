@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
     }
 
     // Output file
-    DeleteFile(argv[2]);
+    DeleteFile(argv[OutputFileName_pos]);
     HANDLE Output = CreateFile(argv[OutputFileName_pos], FILE_WRITE_DATA, FILE_SHARE_READ, NULL, CREATE_NEW, 0, NULL);
     if (Output == INVALID_HANDLE_VALUE)
     {
