@@ -58,5 +58,6 @@ Options:
 - `-t`: count of seconds to wait between each iteration 
 - `-i`: count of bytes ignoring -t value ("burst") 
 - `-c`: count of repetitions of InputFileName 
+- `-q`: create a sequence of files instead of an unique file
 - `-s`: short form of log (only a period) 
 - `-l`: file instead of standard output 

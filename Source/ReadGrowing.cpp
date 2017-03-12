@@ -93,7 +93,9 @@ void General_WaitForMoreData_End_0(struct MediaInfo_Event_General_WaitForMoreDat
 void Global_Demux_4(struct MediaInfo_Event_Global_Demux_4 *Event, struct UserHandle_struct* UserHandle)
 {
     OutputPrefix(UserHandle->Out);
-    UserHandle->Out << "ID=" << setfill('0') << setw(4) << Event->StreamIDs[0] << ", Offset=" << setfill('0') << setw(10) << hex << Event->StreamOffset << ", Frame#=" << setw(4) << dec << Event->FrameNumber << ", DTS=" << setw(10) << setprecision(3) << fixed << Event->DTS / 1000000.0 << " demuxed";
+    if (Event->StreamIDs[0] != (MediaInfo_int64u)-1)
+        UserHandle->Out << "ID=" << setfill('0') << setw(4) << Event->StreamIDs[0] << ", ";
+    UserHandle->Out << "Offset = " << setfill('0') << setw(10) << hex << Event->StreamOffset << ", Frame# = " << setw(4) << dec << Event->FrameNumber << ", DTS = " << setw(10) << setprecision(3) << fixed << Event->DTS / 1000000.0 << " demuxed";
 }
 
 //---------------------------------------------------------------------------

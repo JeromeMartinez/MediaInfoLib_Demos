@@ -51,6 +51,7 @@ int main(int argc, char* argv[])
     DWORD Delay_Value = 1000; // 1000 ms
     char* LogFile = NULL;
     int Count = 1;
+    bool SequenceOfFiles = false;
     LARGE_INTEGER Offset_IgnoreSleep = { 0 };
 
     // Checking command line parameters
@@ -81,6 +82,10 @@ int main(int argc, char* argv[])
             i++;
             LogFile = argv[i];
         }
+        else if (!strcmp(argv[i], "-q"))
+        {
+            SequenceOfFiles = true;
+        }
         else if (!strcmp(argv[i], "-s"))
         {
             Short = true;
@@ -108,8 +113,15 @@ int main(int argc, char* argv[])
             "-t count of seconds to wait between each iteration\n"
             "-i count of bytes ignoring -t value (\"burst\")\n"
             "-c count of repetitions of InputFileName\n"
+            "-q create a sequence of files instead of an unique file\n"
             "-s short form of log (only a period)"
             "-l log file instead of standard output" << endl;
+        return 1;
+    }
+    if (SequenceOfFiles && Count <= 1)
+    {
+        cout <<
+            "-c value must be >1 when -q is used" << endl;
         return 1;
     }
 
@@ -122,13 +134,14 @@ int main(int argc, char* argv[])
     }
 
     // Output file
-    DeleteFile(argv[OutputFileName_pos]);
-    HANDLE Output = CreateFile(argv[OutputFileName_pos], FILE_WRITE_DATA, FILE_SHARE_READ, NULL, CREATE_NEW, 0, NULL);
-    if (Output == INVALID_HANDLE_VALUE)
-    {
-        cout << "OutputFileName " << argv[OutputFileName_pos] << " can not be open for writing (File exists?)" << endl;
-        return 1;
-    }
+    HANDLE Output = INVALID_HANDLE_VALUE;
+    string OutputFileName(argv[OutputFileName_pos]);
+    size_t OutputFileName_DotPos = OutputFileName.rfind('.');
+    if (OutputFileName_DotPos == string::npos)
+        OutputFileName_DotPos = OutputFileName.size();
+    stringstream SequenceOfFiles_NumberWidth_Temp;
+    SequenceOfFiles_NumberWidth_Temp << Count - 1;
+    size_t SequenceOfFiles_NumberWidth = SequenceOfFiles_NumberWidth_Temp.str().size();
 
     // Configuring log file
     ofstream LogFileStream;
@@ -168,6 +181,29 @@ int main(int argc, char* argv[])
     // Reading then writing then small pause
     for (;;)
     {
+        // Output file
+        if (Output == INVALID_HANDLE_VALUE)
+        {
+            if (SequenceOfFiles)
+            {
+                stringstream Count_Stream;
+                Count_Stream << setfill('0') << setw(SequenceOfFiles_NumberWidth) << Pos;
+                OutputFileName.insert(OutputFileName_DotPos, Count_Stream.str());
+            }
+
+            DeleteFile(OutputFileName.c_str());
+            Output = CreateFile(OutputFileName.c_str(), FILE_WRITE_DATA, FILE_SHARE_READ, NULL, CREATE_NEW, 0, NULL);
+            if (Output == INVALID_HANDLE_VALUE)
+            {
+                cout << "OutputFileName " << OutputFileName << " can not be open for writing (File exists?)" << endl;
+                return 1;
+            }
+
+            if (SequenceOfFiles)
+            {
+                OutputFileName.erase(OutputFileName_DotPos, SequenceOfFiles_NumberWidth);
+            }
+        }
 
         while (ReadFile(Input, Buffer, Buffer_Size_Max, &Buffer_Size, NULL) && Buffer_Size)
         {
@@ -185,8 +221,17 @@ int main(int argc, char* argv[])
                 Sleep(Delay_Value); //Wait
         }
 
-        // Check the count of loops
+        // Next file
         Pos++;
+
+        // Output file
+        if (SequenceOfFiles || Pos >= Count)
+        {
+            CloseHandle(Output);
+            Output = INVALID_HANDLE_VALUE;
+        }
+
+        // Check the count of loops
         if (Pos>=Count)
             break;
 
@@ -195,8 +240,6 @@ int main(int argc, char* argv[])
         GoTo.QuadPart=0;
         BOOL i = SetFilePointerEx(Input, GoTo, NULL, SEEK_SET);
     }
-
-    CloseHandle(Output);
 
     // Ending
     delete[] Buffer;
