@@ -242,6 +242,7 @@ int main(int argc, char* argv[])
     }
 
     // Ending
+    CloseHandle(Input);
     delete[] Buffer;
 
     return 0;
