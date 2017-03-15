@@ -183,10 +183,27 @@ int main(int argc, char* argv[])
     LPVOID Buffer = new unsigned char[Buffer_Size_Max];
     if (!Short)
         LongOutput(Out, Offset, 0, Count);
-    int Pos = 0;
+
+    // Deleting previous files
+    for (int Pos=0; Pos<Count; Pos++)
+    {
+        if (SequenceOfFiles)
+        {
+            stringstream Count_Stream;
+            Count_Stream << setfill('0') << setw(SequenceOfFiles_NumberWidth) << Pos;
+            OutputFileName.insert(OutputFileName_DotPos, Count_Stream.str());
+        }
+
+        DeleteFile(OutputFileName.c_str());
+
+        if (SequenceOfFiles)
+        {
+            OutputFileName.erase(OutputFileName_DotPos, SequenceOfFiles_NumberWidth);
+        }
+    }
 
     // Reading then writing then small pause
-    for (;;)
+    for (int Pos = 0;;)
     {
         // Output file
         if (Output == INVALID_HANDLE_VALUE)
