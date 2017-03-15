@@ -46,6 +46,7 @@ int main(int argc, char* argv[])
     // Defaults
     int InputFileName_pos = -1;
     int OutputFileName_pos = -1;
+    int ReplaceInputFileName_pos = -1;
     DWORD Buffer_Size_Max = -1; // Based on file size
     bool Short = false;
     DWORD Delay_Value = 1000; // 1000 ms
@@ -95,6 +96,11 @@ int main(int argc, char* argv[])
             i++;
             Delay_Value = (DWORD)(atof(argv[i]) * 1000);
         }
+        else if (!strcmp(argv[i], "-w") && i + 1 < argc)
+        {
+            i++;
+            ReplaceInputFileName_pos = i;
+        }
         else if (InputFileName_pos == -1)
             InputFileName_pos = i;
         else if (OutputFileName_pos == -1)
@@ -108,12 +114,13 @@ int main(int argc, char* argv[])
     if (OutputFileName_pos == -1 || !Buffer_Size_Max || !Delay_Value)
     {
         cout <<
-            "Usage: " << argv[0] << " [-b Bytes] [-t Seconds] [-s] [-l LogFile] InputFileName OutputFileName\n"
+            "Usage: " << argv[0] << " [-b Bytes] [-t Seconds] [-i Bytes] [-c Count] [-q] [-w ReplaceInputFileName] [-s] [-l LogFile] InputFileName OutputFileName\n"
             "-b count of bytes to read at each iteration\n"
             "-t count of seconds to wait between each iteration\n"
             "-i count of bytes ignoring -t value (\"burst\")\n"
             "-c count of repetitions of InputFileName\n"
             "-q create a sequence of files instead of an unique file\n"
+            "-w write begin of the output file with new content\n"
             "-s short form of log (only a period)"
             "-l log file instead of standard output" << endl;
         return 1;
@@ -225,7 +232,7 @@ int main(int argc, char* argv[])
         Pos++;
 
         // Output file
-        if (SequenceOfFiles || Pos >= Count)
+        if ((SequenceOfFiles || Pos >= Count) && ReplaceInputFileName_pos == -1)
         {
             CloseHandle(Output);
             Output = INVALID_HANDLE_VALUE;
@@ -239,6 +246,35 @@ int main(int argc, char* argv[])
         LARGE_INTEGER GoTo;
         GoTo.QuadPart=0;
         BOOL i = SetFilePointerEx(Input, GoTo, NULL, SEEK_SET);
+    }
+
+    // Replace begin of a file
+    if (ReplaceInputFileName_pos != -1)
+    {
+        LARGE_INTEGER GoTo;
+        GoTo.QuadPart = 0;
+        if (!SetFilePointerEx(Output, GoTo, NULL, SEEK_SET))
+        {
+            cout << "IntpuFileName " << OutputFileName << " can not be restarted" << endl;
+            return 1;
+        }
+
+        HANDLE Input2 = CreateFile(argv[ReplaceInputFileName_pos], FILE_READ_DATA, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+        if (Input2 == INVALID_HANDLE_VALUE)
+        {
+            cout << "InputFileName " << argv[ReplaceInputFileName_pos] << " can not be open for reading" << endl;
+            return 1;
+        }
+
+        while (ReadFile(Input2, Buffer, Buffer_Size_Max, &Buffer_Size, NULL) && Buffer_Size)
+        {
+            DWORD Buffer_Size_Written;
+            if (!WriteFile(Output, Buffer, Buffer_Size, &Buffer_Size_Written, NULL))
+                return 1;
+        }
+
+        CloseHandle(Input2);
+        CloseHandle(Output);
     }
 
     // Ending

@@ -59,5 +59,6 @@ Options:
 - `-i`: count of bytes ignoring -t value ("burst") 
 - `-c`: count of repetitions of InputFileName 
 - `-q`: create a sequence of files instead of an unique file
+- `-w`: write begin of the output file with new content\
 - `-s`: short form of log (only a period) 
 - `-l`: file instead of standard output 
