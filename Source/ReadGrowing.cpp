@@ -54,6 +54,14 @@ void General_Start_0(struct MediaInfo_Event_General_Start_0* Event, struct UserH
     UserHandle->Out << endl;
 }
 
+
+//---------------------------------------------------------------------------
+// Event - General_SubFile_Start
+void General_SubFile_Start_0(struct MediaInfo_Event_General_SubFile_Start_0* Event, struct UserHandle_struct* UserHandle)
+{
+    OutputPrefix(UserHandle->Out);
+    UserHandle->Out << "Starting to parse " << Event->FileName_Relative << endl;
+}
 //---------------------------------------------------------------------------
 // Event - General_End
 void General_End_0(struct MediaInfo_Event_General_End_0* Event, struct UserHandle_struct* UserHandle)
@@ -93,7 +101,9 @@ void General_WaitForMoreData_End_0(struct MediaInfo_Event_General_WaitForMoreDat
 void Global_Demux_4(struct MediaInfo_Event_Global_Demux_4 *Event, struct UserHandle_struct* UserHandle)
 {
     OutputPrefix(UserHandle->Out);
-    UserHandle->Out << "ID=" << setfill('0') << setw(4) << Event->StreamIDs[0] << ", Offset=" << setfill('0') << setw(10) << hex << Event->StreamOffset << ", Frame#=" << setw(4) << dec << Event->FrameNumber << ", DTS=" << setw(10) << setprecision(3) << fixed << Event->DTS / 1000000.0 << " demuxed";
+    if (Event->StreamIDs[0] != (MediaInfo_int64u)-1)
+        UserHandle->Out << "ID=" << setfill('0') << setw(4) << Event->StreamIDs[0] << ", ";
+    UserHandle->Out << "Offset = " << setfill('0') << setw(10) << hex << Event->StreamOffset << ", Frame# = " << setw(4) << dec << Event->FrameNumber << ", DTS = " << setw(10) << setprecision(3) << fixed << Event->DTS / 1000000.0 << " demuxed";
 }
 
 //---------------------------------------------------------------------------
@@ -110,6 +120,7 @@ void __stdcall Event_CallBackFunction(unsigned char* Data_Content, size_t Data_S
     {
         case MediaInfo_Event_General_Start:                     if (EventVersion == 0) General_Start_0((struct MediaInfo_Event_General_Start_0*)Data_Content, UserHandle); break;
         case MediaInfo_Event_General_End:                       if (EventVersion == 0) General_End_0((struct MediaInfo_Event_General_End_0*)Data_Content, UserHandle); break;
+        case MediaInfo_Event_General_SubFile_Start:             if (EventVersion == 0) General_SubFile_Start_0((struct MediaInfo_Event_General_SubFile_Start_0*)Data_Content, UserHandle); break;
         case MediaInfo_Event_General_WaitForMoreData_Start:     if (EventVersion == 0) General_WaitForMoreData_Start_0((struct MediaInfo_Event_General_WaitForMoreData_Start_0*)Data_Content, UserHandle); break;
         case MediaInfo_Event_General_WaitForMoreData_End:       if (EventVersion == 0) General_WaitForMoreData_End_0((struct MediaInfo_Event_General_WaitForMoreData_End_0*)Data_Content, UserHandle); break;
         case MediaInfo_Event_Global_Demux:                      if (EventVersion == 4) Global_Demux_4((struct MediaInfo_Event_Global_Demux_4*)Data_Content, UserHandle); break;

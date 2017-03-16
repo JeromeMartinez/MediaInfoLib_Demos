@@ -34,6 +34,9 @@ powershell -Command "(Get-Content ..\README.md) | ForEach-Object { $_ -replace '
 pandoc MediaInfoLib_Demos\README.md -o MediaInfoLib_Demos\Demos.html -f markdown_github -s
 pandoc ..\Doc\ReadGrowing.md -o MediaInfoLib_Demos\Doc\ReadGrowing.html -f markdown_github -s
 del MediaInfoLib_Demos\README.md
+powershell -Command "(Get-Content MediaInfoLib_Demos\Demos.html) | ForEach-Object { $_ -replace '</style>', '</style><link rel=\"stylesheet\" href=\"Doc/style.css\" type=\"text/css\" />' } | Set-Content MediaInfoLib_Demos\Demos.html"
+powershell -Command "(Get-Content MediaInfoLib_Demos\Doc\ReadGrowing.html) | ForEach-Object { $_ -replace '</style>', '</style><link rel=\"stylesheet\" href=\"style.css\" type=\"text/css\" />' } | Set-Content MediaInfoLib_Demos\Doc\ReadGrowing.html"
+copy ..\Doc\style.css MediaInfoLib_Demos\Doc
 
 @rem --- Copying : Include ---
 mkdir MediaInfoLib_Demos\Include
