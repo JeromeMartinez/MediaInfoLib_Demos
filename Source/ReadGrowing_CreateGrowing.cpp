@@ -53,6 +53,7 @@ int main(int argc, char* argv[])
     char* LogFile = NULL;
     int Count = 1;
     bool SequenceOfFiles = false;
+    bool OpenWaitClose = false;
     LARGE_INTEGER Offset_IgnoreSleep = { 0 };
 
     // Checking command line parameters
@@ -82,6 +83,10 @@ int main(int argc, char* argv[])
         {
             i++;
             LogFile = argv[i];
+        }
+        else if (!strcmp(argv[i], "-o"))
+        {
+            OpenWaitClose = true;
         }
         else if (!strcmp(argv[i], "-q"))
         {
@@ -121,6 +126,7 @@ int main(int argc, char* argv[])
             "-c count of repetitions of InputFileName\n"
             "-q create a sequence of files instead of an unique file\n"
             "-w write begin of the output file with new content\n"
+            "-o close the file before waiting then open it again, in append mode\n"
             "-s short form of log (only a period)"
             "-l log file instead of standard output" << endl;
         return 1;
@@ -216,7 +222,7 @@ int main(int argc, char* argv[])
             }
 
             DeleteFile(OutputFileName.c_str());
-            Output = CreateFile(OutputFileName.c_str(), FILE_WRITE_DATA, FILE_SHARE_READ, NULL, CREATE_NEW, 0, NULL);
+            Output = CreateFile(OutputFileName.c_str(), FILE_APPEND_DATA, FILE_SHARE_READ, NULL, CREATE_NEW, 0, NULL);
             if (Output == INVALID_HANDLE_VALUE)
             {
                 cout << "OutputFileName " << OutputFileName << " can not be open for writing (File exists?)" << endl;
@@ -242,7 +248,22 @@ int main(int argc, char* argv[])
                 LongOutput(Out, Offset, Pos, Count);
 
             if (Offset.QuadPart>Offset_IgnoreSleep.QuadPart)
+            {
+                if (OpenWaitClose)
+                    CloseHandle(Output);
+
                 Sleep(Delay_Value); //Wait
+
+                if (OpenWaitClose)
+                {
+                    Output = CreateFile(OutputFileName.c_str(), FILE_APPEND_DATA, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+                    if (Output == INVALID_HANDLE_VALUE)
+                    {
+                        cout << "OutputFileName " << OutputFileName << " can not be open for appending (File exists?)" << endl;
+                        return 1;
+                    }
+                }
+            }
         }
 
         // Next file

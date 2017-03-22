@@ -63,6 +63,7 @@ Options:
 - `-c`: count of repetitions of InputFileName 
 - `-q`: create a sequence of files instead of an unique file
 - `-w`: write begin of the output file with new content
+- `-o`: close the file before waiting then open it again, in append mode
 - `-s`: short form of log (only a period) 
 - `-l`: file instead of standard output 
 
